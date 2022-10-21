@@ -62,18 +62,39 @@ def get_arguments():
 def read_fasta(fasta_file):
     """Extract the complete genome sequence as a single string
     """
-    pass
+    seq = ""
+    with open(fasta_file, "r") as filin:
+        for line in filin:
+            if line.startswith(">"):
+                continue
+            else:
+                seq += line.strip().upper()
+        
+        return seq
+        
 
 def find_start(start_regex, sequence, start, stop):
     """Find the start codon
     """
-    pass
+    codon_start_pos = start_regex.search(sequence[start:stop])
+
+    if codon_start_pos != None :
+        return codon_start_pos.start(0)
+    else:
+        return None
 
 
 def find_stop(stop_regex, sequence, start):
     """Find the stop codon
     """
-    pass
+    codon_stop_pos = stop_regex.finditer(sequence, start, len(sequence))
+    for match in codon_stop_pos:
+        if match != None:
+            # verifier que c'est dans le bon cadre de lecture 
+            if(match.start(0)-start) % 3 == 0:
+                return match.start(0)
+     
+    return None
 
 def has_shine_dalgarno(shine_regex, sequence, start, max_shine_dalgarno_distance):
     """Find a shine dalgarno motif before the start codon
