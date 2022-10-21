@@ -99,7 +99,7 @@ def find_stop(stop_regex, sequence, start):
 def has_shine_dalgarno(shine_regex, sequence, start, max_shine_dalgarno_distance):
     """Find a shine dalgarno motif before the start codon
     """
-    if start -max_shine_dalgarno_distance < 0:
+    if start - max_shine_dalgarno_distance < 0:
         return False
     
     find_shine_seq = shine_regex.search(sequence, start - max_shine_dalgarno_distance, start-6)
@@ -115,23 +115,17 @@ def predict_genes(sequence, start_regex, stop_regex, shine_regex,
     """
     current_pos = 0
     gene_list = [] 
-    print(len(sequence))
     
     while (len(sequence) - current_pos) >= min_gap:
         current_pos = find_start(start_regex, sequence, current_pos, len(sequence))
-        print(current_pos)
         stop = find_stop(stop_regex, sequence, current_pos +3)
-        print(stop)
         if stop is not None:
             if stop - current_pos >= min_gene_len:
-                print(stop - current_pos)
                 shine_seq = has_shine_dalgarno(shine_regex, sequence, current_pos,max_shine_dalgarno_distance)
                 if shine_seq:
-                    print("yes") 
                     gene_list.append([current_pos+1, stop+3])
                     current_pos = stop + 3 + min_gap
                 else:
-                    print("no")
                     current_pos = current_pos + 1
             else:
                 current_pos = current_pos + 1
@@ -204,13 +198,22 @@ def main():
     # Let us do magic in 5' to 3'
     seq = read_fasta(args.genome_file)
     gene_list = predict_genes(seq, start_regex, stop_regex, shine_regex, args.min_gene_len, args.max_shine_dalgarno_distance, args.min_gap)
+    
+    seq_rc = reverse_complement(seq)
+    
+    gene_list_reverse = predict_genes(seq_rc, start_regex, stop_regex, shine_regex, args.min_gene_len, args.max_shine_dalgarno_distance, args.min_gap)
+    for pos in gene_list_reverse:
+        pos.reverse()
+        pos[0] = len(seq_rc) - pos[0] + 1
+        pos[1] = len(seq_rc) - pos[1] + 1
+
     # Don't forget to uncomment !!!
     # Call these function in the order that you want
     # We reverse and complement
     #sequence_rc = reverse_complement(sequence)
     # Call to output functions
-    #write_genes_pos(args.predicted_genes_file, probable_genes)
-    #write_genes(args.fasta_file, sequence, probable_genes, sequence_rc, probable_genes_comp)
+    write_genes_pos(args.predicted_genes_file, gene_list)
+    write_genes(args.fasta_file, seq, gene_list, seq_rc, gene_list_reverse)
 
 
 
